@@ -5,6 +5,7 @@ import (
 	"encoding/csv"
 	"io"
 	"log"
+	"os"
 )
 
 type Config struct {
@@ -87,4 +88,22 @@ func ForEach(reader io.Reader, config Config, cb func(*Row) error) (int, error) 
 	}
 
 	return 0, nil
+}
+
+// ForEachFile is a wrapper around ForEach to enable processing files with less
+// boilerplate code.
+func ForEachFile(file string, config Config, cb func(*Row) error) (int, error) {
+	f, err := os.Open(file)
+
+	if err != nil {
+		return 0, err
+	}
+
+	defer (func() {
+		if err := f.Close(); err != nil {
+			log.Printf("test failed to close file; %s", err)
+		}
+	})()
+
+	return ForEach(f, config, cb)
 }
