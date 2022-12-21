@@ -7,9 +7,7 @@ import (
 func TestProcessingPlainGzippedCSV(t *testing.T) {
 	config := Config{Header: true, Gzipped: true}
 
-	processed, err := ForEachFile("testfiles/people.csv.gz", config, func(*Row) error {
-		return nil /* NOP */
-	})
+	processed, err := ForEachFile("testfiles/people.csv.gz", config, nil)
 
 	if err != nil {
 		t.Fatalf("test failed process file; %s", err)
@@ -23,9 +21,7 @@ func TestProcessingPlainGzippedCSV(t *testing.T) {
 func TestProcessingPlainCSV(t *testing.T) {
 	config := Config{Header: true}
 
-	processed, err := ForEachFile("testfiles/people.csv", config, func(*Row) error {
-		return nil /* NOP */
-	})
+	processed, err := ForEachFile("testfiles/people.csv", config, nil)
 
 	if err != nil {
 		t.Fatalf("test failed process file; %s", err)

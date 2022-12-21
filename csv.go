@@ -75,19 +75,21 @@ func ForEach(reader io.Reader, config Config, cb func(*Row) error) (int, error) 
 			continue
 		}
 
-		err = cb(&Row{
-			Headers: headers,
-			Data:    row,
-		})
+		if cb != nil {
+			err = cb(&Row{
+				Headers: headers,
+				Data:    row,
+			})
 
-		if err != nil {
-			return processed, err
+			if err != nil {
+				return processed, err
+			}
 		}
 
 		processed++
 	}
 
-	return 0, nil
+	return processed, nil
 }
 
 // ForEachFile is a wrapper around ForEach to enable processing files with less
