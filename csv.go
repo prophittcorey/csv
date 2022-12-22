@@ -103,7 +103,7 @@ func ForEachFile(file string, config Config, cb func(*Row) error) (int, error) {
 
 	defer (func() {
 		if err := f.Close(); err != nil {
-			log.Printf("test failed to close file; %s", err)
+			log.Printf("failed to close file (%s); %s", file, err)
 		}
 	})()
 
