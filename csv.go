@@ -35,7 +35,7 @@ func ForEach(reader io.Reader, config Config, cb func(*Row) error) (int, error) 
 		gr, err := gzip.NewReader(reader)
 
 		if err != nil {
-			log.Println(err)
+			return 0, err
 		}
 
 		reader = io.Reader(gr)
@@ -58,7 +58,7 @@ func ForEach(reader io.Reader, config Config, cb func(*Row) error) (int, error) 
 		hs, err := cr.Read()
 
 		if err != nil {
-			log.Println(err)
+			return 0, err
 		}
 
 		headers = append(headers, hs...)
