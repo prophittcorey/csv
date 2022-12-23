@@ -15,11 +15,11 @@ type Row struct {
 	// Data is the actual row data.
 	Data []string
 
-	headermapping map[string]int
+	headermap map[string]int
 }
 
 func (r Row) Get(header string) (string, bool) {
-	if index, ok := r.headermapping[header]; ok && index < len(r.Data) {
+	if index, ok := r.headermap[header]; ok && index < len(r.Data) {
 		return r.Data[index], true
 	}
 
@@ -36,7 +36,7 @@ func (r *Reader) ForEach(cb func(*Row) error) (int, error) {
 	var processed int
 	var headers []string
 
-	hmap := map[string]int{}
+	hm := map[string]int{}
 
 	/* shifts the first row off and stores as the headers */
 	if r.Header {
@@ -49,7 +49,7 @@ func (r *Reader) ForEach(cb func(*Row) error) (int, error) {
 		headers = append(headers, hs...)
 
 		for index := range headers {
-			hmap[headers[index]] = index
+			hm[headers[index]] = index
 		}
 	}
 
@@ -65,7 +65,7 @@ func (r *Reader) ForEach(cb func(*Row) error) (int, error) {
 		}
 
 		if cb != nil {
-			if err := cb(&Row{Headers: headers, Data: row, headermapping: hmap}); err != nil {
+			if err := cb(&Row{Headers: headers, Data: row, headermap: hm}); err != nil {
 				return processed, err
 			}
 		}
@@ -94,6 +94,8 @@ func NewReader(r io.Reader) (*Reader, error) {
 		}
 
 		r = io.Reader(gr)
+	} else {
+		r = io.Reader(reader)
 	}
 
 	return &Reader{
