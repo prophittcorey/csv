@@ -1,5 +1,7 @@
 # CSV
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/prophittcorey/csv.svg)](https://pkg.go.dev/github.com/prophittcorey/csv)
+
 A golang package that extends the standard library's `csv.Reader` with
 `ForEach` to make stream processing large files a breeze without loading the
 entire file in memory. Furthermore, this package seamlessly adds gzip support
