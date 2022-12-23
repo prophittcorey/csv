@@ -13,33 +13,46 @@ for even easier processing at scale.
 package main
 
 import (
+  "bytes"
+  "io"
   "log"
   "strings"
 
   "github.com/prophittcorey/csv"
 )
 
-var mockdata = strings.NewReader(`
+// Plain text data. A regular ol' CSV file.
+var plaindata = strings.NewReader(`
 id,first_name,age
 1,john,21
 2,sam,23
 `)
 
+// Raw gzip bytes from the compressed CSV file.
+var gzdata = bytes.NewReader([]byte{
+  31, 139, 8, 8, 236, 213, 165, 99, 0, 3, 102, 111, 111, 46, 99, 115, 118, 0,
+  203, 76, 209, 73, 203, 44, 42, 46, 137, 207, 75, 204, 77, 213, 73, 76, 79,
+  229, 50, 212, 201, 202, 207, 200, 211, 49, 50, 228, 50, 210, 41, 78, 204, 213,
+  49, 50, 230, 2, 0, 95, 174, 139, 212, 37, 0, 0, 0,
+})
+
 func main() {
-  if reader, err := csv.NewReader(mockdata); err == nil {
-    /* give the reader a head's up... no pun intended, kinda */
-    reader.Header = true
+  for _, r := range []io.Reader{plaindata, gzdata} {
+      if reader, err := csv.NewReader(r); err == nil {
+          /* give the reader a head's up... no pun intended, kinda */
+          reader.Header = true
 
-    rows, err := reader.ForEach(func(row *csv.Row) error {
-      if firstName, ok := row.Get("first_name"); ok {
-              log.Printf("Hello, %s!\n", firstName)
+          rows, err := reader.ForEach(func(row *csv.Row) error {
+              if firstName, ok := row.Get("first_name"); ok {
+                  log.Printf("Hello, %s!\n", firstName)
+              }
+
+              /* stream processing halts if non-nil is returned */
+              return nil
+          })
+
+          log.Printf("We processed %d rows; errors? %v\n", rows, err != nil)
       }
-
-      /* stream processing halts if non-nil is returned */
-      return nil
-    })
-
-    log.Printf("We processed %d rows; errors? %v\n", rows, err != nil)
   }
 }
 ```
