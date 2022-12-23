@@ -17,8 +17,17 @@ type Config struct {
 }
 
 type Row struct {
-	Headers []string
-	Data    []string
+	Headers   []string       /* all headers */
+	HeaderMap map[string]int /* maps headet to index */
+	Data      []string       /* the actual row data */
+}
+
+func (r Row) Get(header string) (string, bool) {
+	if index, ok := r.HeaderMap[header]; ok && index < len(r.Data) {
+		return r.Data[index], true
+	}
+
+	return "", false
 }
 
 // ForEach iterates through a CSV and calls the callback for each row.
@@ -26,6 +35,8 @@ type Row struct {
 func ForEach(reader io.Reader, config Config, cb func(*Row) error) (int, error) {
 	var processed int
 	var headers []string
+
+	headerMap := map[string]int{}
 
 	if config.ColSep == 0 {
 		config.ColSep = ','
@@ -62,6 +73,10 @@ func ForEach(reader io.Reader, config Config, cb func(*Row) error) (int, error) 
 		}
 
 		headers = append(headers, hs...)
+
+		for index := range headers {
+			headerMap[headers[index]] = index
+		}
 	}
 
 	for {
@@ -77,8 +92,9 @@ func ForEach(reader io.Reader, config Config, cb func(*Row) error) (int, error) 
 
 		if cb != nil {
 			err = cb(&Row{
-				Headers: headers,
-				Data:    row,
+				Headers:   headers,
+				HeaderMap: headerMap,
+				Data:      row,
 			})
 
 			if err != nil {
