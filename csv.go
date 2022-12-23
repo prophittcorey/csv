@@ -1,72 +1,46 @@
 package csv
 
 import (
+	"bufio"
 	"compress/gzip"
 	"encoding/csv"
 	"io"
-	"log"
 	"os"
 )
 
-type Config struct {
-	Header      bool /* has a reader row ? */
-	Gzipped     bool /* if true, will be processed as a gzipped CSV */
-	ColSep      rune /* default ',' */
-	LazyQuotes  bool
-	ReuseRecord bool
-}
-
 type Row struct {
-	Headers   []string       /* all headers */
-	HeaderMap map[string]int /* maps headet to index */
-	Data      []string       /* the actual row data */
+	// Headers stores a slice of the header columns (if Reader's Header is true).
+	Headers []string
+
+	// Data is the actual row data.
+	Data []string
+
+	headermapping map[string]int
 }
 
 func (r Row) Get(header string) (string, bool) {
-	if index, ok := r.HeaderMap[header]; ok && index < len(r.Data) {
+	if index, ok := r.headermapping[header]; ok && index < len(r.Data) {
 		return r.Data[index], true
 	}
 
 	return "", false
 }
 
-// ForEach iterates through a CSV and calls the callback for each row.
-// Returns the number of rows processed and an error if any were detected.
-func ForEach(reader io.Reader, config Config, cb func(*Row) error) (int, error) {
+type Reader struct {
+	*csv.Reader
+
+	Header bool /* if true, will extract the header row first */
+}
+
+func (r *Reader) ForEach(cb func(*Row) error) (int, error) {
 	var processed int
 	var headers []string
 
-	headerMap := map[string]int{}
+	hmap := map[string]int{}
 
-	if config.ColSep == 0 {
-		config.ColSep = ','
-	}
-
-	if config.Gzipped {
-		gr, err := gzip.NewReader(reader)
-
-		if err != nil {
-			return 0, err
-		}
-
-		reader = io.Reader(gr)
-
-		defer (func() {
-			if err := gr.Close(); err != nil {
-				log.Println(err)
-			}
-		})()
-	}
-
-	cr := csv.NewReader(reader)
-
-	cr.Comma = config.ColSep
-	cr.LazyQuotes = config.LazyQuotes
-	cr.ReuseRecord = config.ReuseRecord
-
-	/* pop the first row off as it's the header row */
-	if config.Header {
-		hs, err := cr.Read()
+	/* shifts the first row off and stores as the headers */
+	if r.Header {
+		hs, err := r.Read()
 
 		if err != nil {
 			return 0, err
@@ -75,29 +49,23 @@ func ForEach(reader io.Reader, config Config, cb func(*Row) error) (int, error) 
 		headers = append(headers, hs...)
 
 		for index := range headers {
-			headerMap[headers[index]] = index
+			hmap[headers[index]] = index
 		}
 	}
 
 	for {
-		row, err := cr.Read()
+		row, err := r.Read()
 
 		if err != nil {
 			if err == io.EOF {
 				return processed, nil
 			}
 
-			continue
+			return processed, err
 		}
 
 		if cb != nil {
-			err = cb(&Row{
-				Headers:   headers,
-				HeaderMap: headerMap,
-				Data:      row,
-			})
-
-			if err != nil {
+			if err := cb(&Row{Headers: headers, Data: row, headermapping: hmap}); err != nil {
 				return processed, err
 			}
 		}
@@ -108,20 +76,37 @@ func ForEach(reader io.Reader, config Config, cb func(*Row) error) (int, error) 
 	return processed, nil
 }
 
-// ForEachFile is a wrapper around ForEach to enable processing files with less
-// boilerplate code.
-func ForEachFile(file string, config Config, cb func(*Row) error) (int, error) {
+func NewReader(r io.Reader) (*Reader, error) {
+	reader := bufio.NewReader(r)
+
+	bs, err := reader.Peek(2)
+
+	if err != nil {
+		return nil, err
+	}
+
+	/* sniff the first two bytes: 0x1f8b == gzip */
+	if bs[0] == 0x1f && bs[1] == 0x8b {
+		gr, err := gzip.NewReader(reader)
+
+		if err != nil {
+			return nil, err
+		}
+
+		r = io.Reader(gr)
+	}
+
+	return &Reader{
+		Reader: csv.NewReader(r),
+	}, nil
+}
+
+func NewReaderFromFile(file string) (*Reader, error) {
 	f, err := os.Open(file)
 
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	defer (func() {
-		if err := f.Close(); err != nil {
-			log.Printf("failed to close file (%s); %s", file, err)
-		}
-	})()
-
-	return ForEach(f, config, cb)
+	return NewReader(f)
 }

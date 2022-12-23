@@ -1,16 +1,20 @@
 package csv
 
-import (
-	"testing"
-)
+import "testing"
 
 func TestProcessingPlainGzippedCSV(t *testing.T) {
-	config := Config{Header: true, Gzipped: true}
-
-	processed, err := ForEachFile("testfiles/people.csv.gz", config, nil)
+	reader, err := NewReaderFromFile("testfiles/people.csv.gz")
 
 	if err != nil {
-		t.Fatalf("test failed process file; %s", err)
+		t.Fatalf("test failed open file; %s", err)
+	}
+
+	reader.Header = true
+
+	processed, err := reader.ForEach(nil)
+
+	if err != nil {
+		t.Fatalf("test failed to process reader; %s", err)
 	}
 
 	if processed != 4 {
@@ -18,72 +22,86 @@ func TestProcessingPlainGzippedCSV(t *testing.T) {
 	}
 }
 
-func TestValidGetsIndexNonZero(t *testing.T) {
-	config := Config{Header: true, Gzipped: true}
+// func TestProcessingPlainGzippedCSV(t *testing.T) {
+// 	config := Config{Header: true, Gzipped: true}
 
-	valid := map[string]bool{
-		"jones": true,
-		"smith": true,
-	}
+// 	processed, err := ForEachFile("testfiles/people.csv.gz", config, nil)
 
-	processed, err := ForEachFile("testfiles/people.csv.gz", config, func(row *Row) error {
-		if lname, ok := row.Get("last_name"); ok {
-			if _, ok := valid[lname]; !ok {
-				t.Fatalf("found invalid name; %s", lname)
-			}
-		}
+// 	if err != nil {
+// 		t.Fatalf("test failed process file; %s", err)
+// 	}
 
-		return nil
-	})
+// 	if processed != 4 {
+// 		t.Fatalf("test failed process correct row count; got %d", processed)
+// 	}
+// }
 
-	if err != nil {
-		t.Fatalf("test failed process file; %s", err)
-	}
+// func TestValidGetsIndexNonZero(t *testing.T) {
+// 	config := Config{Header: true, Gzipped: true}
 
-	if processed != 4 {
-		t.Fatalf("test failed process correct row count; got %d", processed)
-	}
-}
+// 	valid := map[string]bool{
+// 		"jones": true,
+// 		"smith": true,
+// 	}
 
-func TestValidGetsIndexZero(t *testing.T) {
-	config := Config{Header: true, Gzipped: true}
+// 	processed, err := ForEachFile("testfiles/people.csv.gz", config, func(row *Row) error {
+// 		if lname, ok := row.Get("last_name"); ok {
+// 			if _, ok := valid[lname]; !ok {
+// 				t.Fatalf("found invalid name; %s", lname)
+// 			}
+// 		}
 
-	valid := map[string]bool{
-		"alex":    true,
-		"alice":   true,
-		"bob":     true,
-		"barbara": true,
-	}
+// 		return nil
+// 	})
 
-	processed, err := ForEachFile("testfiles/people.csv.gz", config, func(row *Row) error {
-		if fname, ok := row.Get("first_name"); ok {
-			if _, ok := valid[fname]; !ok {
-				t.Fatalf("found invalid name; %s", fname)
-			}
-		}
+// 	if err != nil {
+// 		t.Fatalf("test failed process file; %s", err)
+// 	}
 
-		return nil
-	})
+// 	if processed != 4 {
+// 		t.Fatalf("test failed process correct row count; got %d", processed)
+// 	}
+// }
 
-	if err != nil {
-		t.Fatalf("test failed process file; %s", err)
-	}
+// func TestValidGetsIndexZero(t *testing.T) {
+// 	config := Config{Header: true, Gzipped: true}
 
-	if processed != 4 {
-		t.Fatalf("test failed process correct row count; got %d", processed)
-	}
-}
+// 	valid := map[string]bool{
+// 		"alex":    true,
+// 		"alice":   true,
+// 		"bob":     true,
+// 		"barbara": true,
+// 	}
 
-func TestProcessingPlainCSV(t *testing.T) {
-	config := Config{Header: true}
+// 	processed, err := ForEachFile("testfiles/people.csv.gz", config, func(row *Row) error {
+// 		if fname, ok := row.Get("first_name"); ok {
+// 			if _, ok := valid[fname]; !ok {
+// 				t.Fatalf("found invalid name; %s", fname)
+// 			}
+// 		}
 
-	processed, err := ForEachFile("testfiles/people.csv", config, nil)
+// 		return nil
+// 	})
 
-	if err != nil {
-		t.Fatalf("test failed process file; %s", err)
-	}
+// 	if err != nil {
+// 		t.Fatalf("test failed process file; %s", err)
+// 	}
 
-	if processed != 4 {
-		t.Fatalf("test failed process correct row count; got %d", processed)
-	}
-}
+// 	if processed != 4 {
+// 		t.Fatalf("test failed process correct row count; got %d", processed)
+// 	}
+// }
+
+// func TestProcessingPlainCSV(t *testing.T) {
+// 	config := Config{Header: true}
+
+// 	processed, err := ForEachFile("testfiles/people.csv", config, nil)
+
+// 	if err != nil {
+// 		t.Fatalf("test failed process file; %s", err)
+// 	}
+
+// 	if processed != 4 {
+// 		t.Fatalf("test failed process correct row count; got %d", processed)
+// 	}
+// }
