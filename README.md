@@ -10,10 +10,13 @@ for even easier processing at scale.
 ## Package Usage
 
 ```go
-import "github.com/prophittcorey/csv"
+import (
+    "github.com/prophittcorey/csv"
+    "log"
+)
 
-if reader, err := NewReaderFromFile("testfiles/people.csv.gz"); err == nil {
-  /* give the reader a head's up... no pun intended, kinda. */
+if reader, err := csv.NewReaderFromFile("testfiles/people.csv.gz"); err == nil {
+  /* give the reader a head's up... no pun intended, kinda */
   reader.Header = true
 
   rows, err := reader.ForEach(func(row *Row) error {
