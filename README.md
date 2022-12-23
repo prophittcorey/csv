@@ -10,25 +10,37 @@ for even easier processing at scale.
 ## Package Usage
 
 ```go
+package main
+
 import (
-    "github.com/prophittcorey/csv"
-    "log"
+  "log"
+  "strings"
+
+  "github.com/prophittcorey/csv"
 )
 
-if reader, err := csv.NewReaderFromFile("testfiles/people.csv.gz"); err == nil {
-  /* give the reader a head's up... no pun intended, kinda */
-  reader.Header = true
+var mockdata = strings.NewReader(`
+id,first_name,age
+1,john,21
+2,sam,23
+`)
 
-  rows, err := reader.ForEach(func(row *Row) error {
-    if firstName, ok := row.Get("first_name"); ok {
-      log.Printf("Hello, %s!\n", firstName)
-    }
+func main() {
+  if reader, err := csv.NewReader(mockdata); err == nil {
+    /* give the reader a head's up... no pun intended, kinda */
+    reader.Header = true
 
-    /* stream processing halts if non-nil is returned */
-    return nil
-  })
+    rows, err := reader.ForEach(func(row *csv.Row) error {
+      if firstName, ok := row.Get("first_name"); ok {
+              log.Printf("Hello, %s!\n", firstName)
+      }
 
-  log.Printf("We processed %d rows; errors? %v\n", rows, err == nil)
+      /* stream processing halts if non-nil is returned */
+      return nil
+    })
+
+    log.Printf("We processed %d rows; errors? %v\n", rows, err != nil)
+  }
 }
 ```
 
