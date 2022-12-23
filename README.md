@@ -1,21 +1,30 @@
 # CSV
 
-A golang package that extends the standard library's `csv` package with the
-ability to iterate through a CSV (or a gzipped CSV) file without loading the
-entire file in memory.
+A golang package that extends the standard library's `csv.Reader` with
+`ForEach` to make stream processing large files a breeze without loading the
+entire file in memory. Furthermore, this package seamlessly adds gzip support
+for even easier processing at scale.
 
 ## Package Usage
 
 ```go
 import "github.com/prophittcorey/csv"
 
-csv.ForEachFile("testfiles/people.csv.gz", csv.Config{Header: true}, func(row *csv.Row) error {
-  if fname, ok := row.Get("first_name"); ok {
-    fmt.Printf("Hello, %s!\n", fname)
-  }
+if reader, err := NewReaderFromFile("testfiles/people.csv.gz"); err == nil {
+  /* give the reader a head's up... no pun intended, kinda. */
+  reader.Header = true
 
-  return nil
-})
+  rows, err := reader.ForEach(func(row *Row) error {
+    if firstName, ok := row.Get("first_name"); ok {
+      log.Printf("Hello, %s!\n", firstName)
+    }
+
+    /* stream processing halts if non-nil is returned */
+    return nil
+  })
+
+  log.Printf("We processed %d rows; errors? %v\n", rows, err == nil)
+}
 ```
 
 ## License
